@@ -1,6 +1,8 @@
 import { AUTH_LOGIN, AUTH_LOGOUT, AUTH_ERROR, AUTH_CHECK } from 'react-admin';
 import { UserManager } from 'oidc-client';
 
+import getProfileFromToken from './getProfileFromToken'
+
 const issuer = 'https://accounts.google.com/';
 const clientId = process.env.REACT_APP_CLIENT_ID;
 const redirectUri = process.env.REACT_APP_REDIRECT_URI;
@@ -67,15 +69,14 @@ const authProvider = async (type, params = {}) => {
     }
 
     if (type === AUTH_CHECK) {
-        const tokenJson = localStorage.getItem('token');
+        const token = localStorage.getItem('token');
 
-        if (!tokenJson) {
+        if (!token) {
             return Promise.reject()
         }
 
         // This is specific to the Google authentication implementation
-        const token = JSON.parse(tokenJson);
-        const jwt = JSON.parse(window.atob(token.id_token.split('.')[1]));
+        const jwt = getProfileFromToken(token);
         const now = new Date();
 
         return now.getTime() > (jwt.exp * 1000) ? Promise.reject() : Promise.resolve()
