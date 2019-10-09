@@ -4,9 +4,9 @@ install:
 	yarn install
 
 run:
-	yarn start
+	cd app && yarn start
 
 build:
 	rm -rf ./docs
-	NODE_ENV=production yarn build
-	mv build docs
+	cd app && NODE_ENV=production yarn build
+	mv app/build docs
