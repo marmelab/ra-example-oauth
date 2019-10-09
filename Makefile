@@ -1,12 +1,16 @@
 .PHONY: build
 
 install:
-	yarn install
+	cd api && yarn install
+	cd app && yarn install
 
-run:
-	yarn start
+run-app:
+	cd app && yarn start
+
+run-api:
+	cd api && yarn start
 
 build:
 	rm -rf ./docs
-	NODE_ENV=production yarn build
-	mv build docs
+	cd app && NODE_ENV=production yarn build
+	mv app/build docs
