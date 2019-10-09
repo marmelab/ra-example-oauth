@@ -8,5 +8,5 @@ start:
 
 build:
 	rm -rf ./docs
-	yarn build
+	NODE_ENV=production yarn build
 	mv build docs
