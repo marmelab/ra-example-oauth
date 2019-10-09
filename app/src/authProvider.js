@@ -53,9 +53,9 @@ const authProvider = async (type, params = {}) => {
             return Promise.reject();
         }
 
-        const { token_type, access_token } = await response.json();
+        const token = await response.json();
 
-        localStorage.setItem('token', `${token_type} ${access_token}`);
+        localStorage.setItem('token', JSON.stringify(token));
         userManager.clearStaleState();
         cleanup();
         return Promise.resolve();
@@ -67,7 +67,18 @@ const authProvider = async (type, params = {}) => {
     }
 
     if (type === AUTH_CHECK) {
-        return !!localStorage.getItem('token') ? Promise.resolve() : Promise.reject();
+        const tokenJson = localStorage.getItem('token');
+
+        if (!tokenJson) {
+            return Promise.reject()
+        }
+
+        // This is specific to the Google authentication implementation
+        const token = JSON.parse(tokenJson);
+        const jwt = JSON.parse(window.atob(token.id_token.split('.')[1]));
+        const now = new Date();
+
+        return now.getTime() > (jwt.exp * 1000) ? Promise.reject() : Promise.resolve()
     }
 
     return Promise.resolve();
