@@ -1,10 +1,14 @@
 .PHONY: build
 
 install:
-	yarn install
+	cd api && yarn install
+	cd app && yarn install
 
-run:
+run-app:
 	cd app && yarn start
+
+run-api:
+	cd api && yarn start
 
 build:
 	rm -rf ./docs

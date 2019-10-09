@@ -4,7 +4,6 @@
   "private": true,
   "homepage": "./",
   "dependencies": {
-    "history": "^4.10.1",
     "oidc-client": "^1.9.1",
     "react": "^16.9.0",
     "react-admin": "^2.9.6",

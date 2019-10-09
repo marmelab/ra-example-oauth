@@ -7,8 +7,6 @@ import CardActions from '@material-ui/core/CardActions';
 import Button from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
-import parseQueryString from './parseQueryString';
-
 const styles = ({ spacing }) =>
     createStyles({
         button: {
@@ -19,26 +17,24 @@ const styles = ({ spacing }) =>
         },
     });
 
-// We are forced to get the token at the top level
-// Because react-admin redirects to /login and we lose the query params
-const { hash } = new URL(window.location.href);
-let token = hash ? parseQueryString(hash) : null;
-
 const LoginForm = ({ classes, userLogin }) => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        // If token is present, we came back from the provider
-        if (token) {
+        const { searchParams } = new URL(window.location.href);
+        const code = searchParams.get('code');
+        const state = searchParams.get('state');
+
+        // If code is present, we came back from the provider
+        if (code && state) {
             setLoading(true);
-            userLogin({ token });
-            token = null;
+            userLogin({ code, state });
         }
     }, [userLogin]);
 
     const handleLogin = () => {
         setLoading(true);
-        userLogin(); // Do not provide token, just trigger the 
+        userLogin(); // Do not provide code, just trigger the redirection
     };
 
     return (
