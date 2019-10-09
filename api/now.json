@@ -1,4 +1,5 @@
 {
+    "name": "ra-example-oidc-api",
     "env": {
         "OIDC_CLIENT_ID": "@oauth-example-oidc-client-id",
         "OIDC_CLIENT_SECRET": "@oauth-example-oidc-client-secret",
