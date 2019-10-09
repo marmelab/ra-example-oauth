@@ -33,7 +33,7 @@ const parseFragment = hash => hash
     }, {});
 
 const { hash } = new URL(window.location.href);
-const token = hash ? parseFragment(hash) : null
+let token = hash ? parseFragment(hash) : null
 
 const LoginForm = ({ classes, userLogin }) => {
     const [loading, setLoading] = useState(!!token);
@@ -70,6 +70,7 @@ const LoginForm = ({ classes, userLogin }) => {
             // 2. We came back from the issuer with #token infos in query params
             userLogin({ token });
             userManager.current.clearStaleState();
+            token = null;
         };
 
         handleOpenIdAuthentication();
