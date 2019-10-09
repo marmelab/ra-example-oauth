@@ -3,7 +3,7 @@
 install:
 	yarn install
 
-start:
+run:
 	yarn start
 
 build:
