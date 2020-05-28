@@ -4,6 +4,7 @@
   "private": true,
   "homepage": "./",
   "dependencies": {
+    "base64url": "^3.0.1",
     "oidc-client": "^1.9.1",
     "react": "^16.9.0",
     "react-admin": "^2.9.6",
