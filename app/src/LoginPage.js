@@ -1,8 +1,13 @@
-import React from 'react';
-import { Login } from 'react-admin';
+import React from 'react'
+import { Login } from 'react-admin'
+import LoginButton from './LoginButton'
 
-import LoginForm from './LoginForm';
-
-const LoginPage = (props) => <Login {...props} loginForm={<LoginForm />} />;
+const LoginPage = () => {
+    return (
+        <Login>
+            <LoginButton />
+        </Login>)
+    ;
+}
 
 export default LoginPage;

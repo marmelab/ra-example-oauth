@@ -1,5 +1,5 @@
-import { AUTH_LOGIN, AUTH_LOGOUT, AUTH_ERROR, AUTH_CHECK } from 'react-admin';
 import { UserManager } from 'oidc-client';
+import axios from 'axios';
 
 import getProfileFromToken from './getProfileFromToken'
 
@@ -13,76 +13,77 @@ const userManager = new UserManager({
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: 'code',
-    scope: 'openid email profile', // Allow to retrieve the email and user name later api side
+    scope: 'openid email profile'
 });
 
-const cleanup = () => {
-    // Remove the ?code&state from the URL
-    window.history.replaceState(
-        {},
-        window.document.title,
-        window.location.origin
+const authProvider = {
+  login: async (params = {}) => {
+    // We need to check that a params object is actually passed otherwise it will fail.
+    if (!params || !params.code || !params.state) {
+      userManager.signinRedirect();
+      // Here we reject the request because there is no notification shown, but we can add an object if we want to add logic in the login call.
+      return Promise.reject({ message: 'Retrieving code from authentication service.', code: 'oauthRedirect'});
+    }
+    
+    // Remove stale states, this is 
+    userManager.clearStaleState();
+    // The UserManager stores state to localStorage this is the key so we need to retreive it on redirect. 
+    const stateKey = `oidc.${params.state}`;
+    const { code_verifier } = JSON.parse(
+        localStorage.getItem(stateKey) || '{}'
     );
-}
 
-const authProvider = async (type, params = {}) => {
-    if (type === AUTH_LOGIN) {
-        // 1. Redirect to the issuer to ask authentication
-        if (!params.code || !params.state) {
-            userManager.signinRedirect();
-            return; // Do not return anything, the login is still loading
-        }
 
-        // 2. We came back from the issuer with ?code infos in query params
+    // Send the request for the token using the code to our authenticator.
+    const { data } = await axios({
+      method: 'POST',
+      url: `${apiUri}/auth`,
+      data: {
+        code: params.code,
+        code_verifier: code_verifier
+      },
+      responseType: 'json',
+      headers: {
+        'Authorization': `Bearer ${params.code}`
+      }
+    })
 
-        // oidc-client uses localStorage to keep a temporary state
-        // between the two redirections. But since we need to send it to the API
-        // we have to retrieve it manually
-        const stateKey = `oidc.${params.state}`;
-        const { code_verifier } = JSON.parse(
-            localStorage.getItem(stateKey) || '{}'
-        );
-
-        // Transform the code to a token via the API
-        const response = await fetch(`${apiUri}/code-to-token`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: params.code, code_verifier }),
-        });
-
-        if (!response.ok) {
-            cleanup();
-            return Promise.reject();
-        }
-
-        const token = await response.json();
-
-        localStorage.setItem('token', JSON.stringify(token));
-        userManager.clearStaleState();
-        cleanup();
-        return Promise.resolve();
-    }
-
-    if ([AUTH_LOGOUT, AUTH_ERROR].includes(type)) {
-        localStorage.removeItem('token');
-        return Promise.resolve();
-    }
-
-    if (type === AUTH_CHECK) {
-        const token = localStorage.getItem('token');
-
-        if (!token) {
-            return Promise.reject()
-        }
-
-        // This is specific to the Google authentication implementation
-        const jwt = getProfileFromToken(token);
-        const now = new Date();
-
-        return now.getTime() > (jwt.exp * 1000) ? Promise.reject() : Promise.resolve()
-    }
+    localStorage.setItem('token', JSON.stringify(data));
+    return Promise.resolve();
+  },
+  logout: () => {
+    localStorage.removeItem('token')
 
     return Promise.resolve();
-}
+  },
+  checkError: (error) => {
+    const { status } = error;
+
+    if (status && (status === 401 || status === 403)) {
+        localStorage.clear();
+
+        return Promise.reject();
+    }
+    return Promise.resolve();
+  },
+  checkAuth: params => {
+    const token = localStorage.getItem('token')
+
+    if (!token) {
+      return Promise.reject()
+    }
+
+    // This is specific to the Google authentication implementation
+    const jwt = getProfileFromToken(token);
+    const now = new Date();
+
+    return now.getTime() > (jwt.exp * 1000) ? Promise.reject() : Promise.resolve()
+  },
+  getPermissions: params => {
+    const token = localStorage.getItem('token');
+
+    return token ? Promise.resolve(token) : Promise.reject()
+    }
+  }
 
 export default authProvider;
